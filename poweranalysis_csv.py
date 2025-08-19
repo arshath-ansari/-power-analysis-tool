@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-#import psutil, time
+import psutil, time
 
 
 from settings import *
@@ -42,8 +42,7 @@ class HighPowerSpecViolation:
             self.power = self.process_vop_iop("power")
             self.power_per_testsuite = self.get_power_per_testsuite()
 
-            print("Computing energy per testsuite.")
-            self.energy_per_testsuite = self.get_energy_per_testsuite()
+             
 
         print("Getting pinname.")
         self.pinnames = self.get_pinnames()
@@ -318,62 +317,7 @@ class HighPowerSpecViolation:
 
         return df
 
-    def get_energy_per_testsuite(self) -> pd.DataFrame:
-        # summing testsuit across pinname
-        plot_values = {
-            "min_seq": [],
-            "site": [],
-            "testsuite_full": [],
-            "testsuite_num": [],
-            "testsuite_last": [],
-            "value": [],
-            "duration": [],
-            "row_index": [],
-        }
-
-        # get all waveforms of a testsuite, which is across the rails
-        for (site, testsuite_full), group in self.power.groupby(["site", "testsuite_full"]):
-            # sum of power waveform per rail in Watts
-            # rail with all NaN is left as it-is and will be filter out in final summation
-            # rail with partial NaN are filled with interpolation
-            power_sum = np.array(
-                [
-                    (
-                        np.array(arr)
-                        if np.isnan(arr).all()
-                        else (
-                            self.fill_nan(np.array(arr)) if np.isnan(arr).any() else np.array(arr)
-                        )
-                    )
-                    for arr in group["waveform"]
-                ]
-            ).sum(axis=1)
-
-            # calculate delta time based on waveform duration and number of sample
-            # assume equal time between waveform samples
-            # duration given as microsecond
-            duration = group["duration"].unique()[0]
-            time_step = np.array([duration / len(w) * 1e-6 for w in group["waveform"]])
-
-            # get the energy across all rail
-            energy = float(np.nansum(power_sum * time_step))
-
-            plot_values["min_seq"].append(group["seq"].min())
-            plot_values["site"].append(site)
-            plot_values["testsuite_full"].append(testsuite_full)
-            plot_values["testsuite_num"].append(self.testsuites.index(testsuite_full))
-            plot_values["testsuite_last"].append(testsuite_full.split(".")[-1])
-            plot_values["value"].append(energy)
-            plot_values["duration"].append(group["duration"].unique()[0])
-            plot_values["row_index"].append(group["row_index"].min())
-
-        df = pd.DataFrame(plot_values)
-        df["testsuite_middle"] = df["testsuite_full"].apply(lambda x: x.split(".")[1] if len(x.split(".")) > 2 else x)
-
-        df.sort_values(by=["min_seq", "row_index"], inplace=True)
-
-        return df
-
+    
     def find_power_violation(
         self,
         lower_threhsold: float,
@@ -434,65 +378,7 @@ class HighPowerSpecViolation:
 
         return filter_rows
 
-    def find_energy_violation(
-        self,
-        lower_threhsold: float,
-        upper_threshold: float = np.inf,
-        output_file: str = None,
-    ) -> pd.DataFrame:
-        """
-        Output the testsuite that is between the lower and upper threshold,
-        which is lower_threshold <= x < upper_threshold
-        """
-        filter_rows = self.energy_per_testsuite.loc[
-            (self.energy_per_testsuite["value"] >= lower_threhsold)
-            & (self.energy_per_testsuite["value"] < upper_threshold)
-        ].copy()
-
-        # add group name column
-        filter_rows["group"] = filter_rows["testsuite_full"].apply(
-            lambda x: self.extract_group_from_full_testsuite(x)
-        )
-
-        # sort by group name and then power value
-        filter_rows.sort_values(
-            by=["group", "site", "value"], ascending=[True, True, False], inplace=True
-        )
-
-        # drop row_index column
-        filter_rows.drop(columns=["row_index"], inplace=True)
-
-        # output file
-        if output_file:
-            filter_rows = filter_rows.reindex(
-                columns=[
-                    "testsuite_num",
-                    "min_seq",
-                    "site",
-                    "testsuite_full",
-                    "group",
-                    "testsuite_last",
-                    "value",
-                    "duration",
-                ]
-            )
-            filter_rows.rename(
-                columns={
-                    "testsuite_num": "Plot Index",
-                    "min_seq": "Seq",
-                    "site": "Site",
-                    "testsuite_full": "Testsuite Path",
-                    "group": "Testsuite Group",
-                    "testsuite_last": "Testsuite Name",
-                    "value": "Energy (J)",
-                    "duration": "duration (us)",
-                },
-                inplace=True,
-            )
-            filter_rows.to_csv(output_file, index=False)
-            return
-
-        return filter_rows
+    
 
     def plot_voltage(self, output_file: str = None) -> None:
         """
@@ -1081,24 +967,23 @@ def main():
     hpsv.plot_voltage(VOLTAGE_PLOT_OUTPUT)
     hpsv.plot_current(CURRENT_PLOT_OUTPUT)
     hpsv.plot_power(POWER_THRESHOLDS, POWER_PLOT_OUTPUT)
-    hpsv.plot_energy(ENERGY_THRESHOLDS, ENERGY_PLOT_OUTPUT)
+    
     hpsv.set_target_value("P95_value")
-    hpsv.plot_current("p95_current_plot.html")
+    
     # P95 Voltage
     hpsv.set_target_value("p95_value")
-    hpsv.plot_voltage("p95_voltage_plot.html")
+     
 
     # P95 Power
     hpsv.set_target_value("p95_value")
-    hpsv.plot_power(output_file="p95_power_plot.html", per_pin=True)
+    
 
 
     hpsv.find_power_violation(min(POWER_THRESHOLDS), output_file=POWER_OUTPUT_CSV)
-    hpsv.find_energy_violation(min(ENERGY_THRESHOLDS), output_file=ENERGY_OUTPUT_CSV)
+    
     hpsv_s.append(hpsv)
         
-  #  generate_rail_summary_html_max_only(hpsv_s, "rail_summary.html")
-   # hpsv.generate_avg_power_summary("avg_power_summary.html")
+  
     hpsv.generate_avg_power_summary("avg_power_summary.csv")
     generate_rail_summary_html_max_and_p95(hpsv_s, "rail_summary_max_p95.html")
 #      ####added for time###########
@@ -1112,7 +997,7 @@ def main():
 #     print(f"Threads Used: {process.num_threads()}")
 #     print(f"Run Time: {end_time - start_time:.2f} sec")
 
-#  ####added for time###########s
+
 
 
     
