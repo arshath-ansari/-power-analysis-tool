@@ -964,6 +964,7 @@ def main():
 #  ####added for time###########
     hpsv_s = [] 
     hpsv = HighPowerSpecViolation(VOP_PATH, IOP_PATH, POWER_PATH)
+    #hpsv = HighPowerSpecViolation(iop_path=IOP_PATH) if u want to just run for IOP
     hpsv.plot_voltage(VOLTAGE_PLOT_OUTPUT)
     hpsv.plot_current(CURRENT_PLOT_OUTPUT)
     hpsv.plot_power(POWER_THRESHOLDS, POWER_PLOT_OUTPUT)
@@ -1006,3 +1007,4 @@ if __name__ == "__main__":
     main()
 
  
+
