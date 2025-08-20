@@ -45,6 +45,15 @@ This script will:
 - Compute metrics like max, average, P95, and energy.
 - Detect threshold violations.
 - Generate HTML plots and CSV summaries.
+Additional Tip
+--------------
+If you only want to run with IOP, change this line in `main()`:
+
+    hpsv = HighPowerSpecViolation(VOP_PATH, IOP_PATH, POWER_PATH)
+to:
+     hpsv = HighPowerSpecViolation(iop_path=IOP_PATH)
+
+
 
 Step 3: Run Binary Analysis
 
@@ -77,5 +86,6 @@ with open("run_instructions.txt", "w") as f:
     f.write(readme_text)
 
 print("run_instructions.txt file has been created successfully.")
+
 
 
