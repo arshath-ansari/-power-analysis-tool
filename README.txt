@@ -10,6 +10,8 @@ Before running the scripts, install the required Python packages:
     pip install numpy pandas plotly psutil
         (or)
     pip install -r requirements.txt (This will install all the required packages automatically)
+      (or)
+    pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org numpy pandas plotly psutil (for testers)
 
 
 
@@ -86,6 +88,7 @@ with open("run_instructions.txt", "w") as f:
     f.write(readme_text)
 
 print("run_instructions.txt file has been created successfully.")
+
 
 
 
