@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import psutil, time
+from tqdm import tqdm
 
 
 from settings import *
@@ -242,8 +243,9 @@ class HighPowerSpecViolation:
             "P95_value": [],
 
         }
+         
+        for (site, testsuite_full), group in tqdm(self.power.groupby(["site", "testsuite_full"]), desc="Processing Power per Testsuite"):
 
-        for (site, pinname, testsuite), group in pinname_ts_group:
             # sort group by Seq column
             group.sort_values(by=["Seq", "row_index"], inplace=True)
 
@@ -298,7 +300,7 @@ class HighPowerSpecViolation:
             "row_index": [],
         }
 
-        for (site, testsuite_full), group in self.power.groupby(["site", "testsuite_full"]):
+        for (site, testsuite_full), group in tqdm(self.power.groupby(["site", "testsuite_full"]), desc="Processing Power per Testsuite"):
             # sum the power across rails for each timestep
             waveform = np.nansum(
                 np.array([np.array(arr) for arr in group["waveform"]]), axis=0
@@ -1010,5 +1012,6 @@ if __name__ == "__main__":
     main()
 
  
+
 
 
