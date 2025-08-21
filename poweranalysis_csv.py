@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 # %%
+# Initializes and processes VOP, IOP, and Power CSVs; extracts testsuites and pinnames; computes power metrics.
 class HighPowerSpecViolation:
     def __init__(self, vop_path: str = None, iop_path: str = None, power_path: str = None) -> None:
         # process input file
@@ -51,7 +52,7 @@ class HighPowerSpecViolation:
         print("Deleting raw iop and vop.")
         del self.iop
         del self.vop
-
+# Defines expected column types for waveform CSV parsing and validation.
     @property
     def column_types(self) -> dict:
         return {
@@ -74,7 +75,7 @@ class HighPowerSpecViolation:
             "Avg Data": float,
             "WAVEFORM DATA": self.float_list,
         }
-
+# Returns list of unique pinnames from VOP and/or IOP, ensuring consistency across both
     def get_pinnames(self) -> list[str]:
         if hasattr(self, "vop") and hasattr(self, "iop"):
             vop_pinnames = self.vop["PinName"].unique()
@@ -90,6 +91,7 @@ class HighPowerSpecViolation:
         elif hasattr(self, "iop"):
             return list(self.iop["PinName"].unique())
 
+# Returns list of unique sites from VOP and/or IOP, ensuring consistency across both.
     def get_sites(self) -> list[str]:
         if hasattr(self, "vop") and hasattr(self, "iop"):
             vop_sites = self.vop["Site"].unique()
@@ -104,7 +106,7 @@ class HighPowerSpecViolation:
             return list(self.vop["Site"].unique())
         elif hasattr(self, "iop"):
             return list(self.iop["Site"].unique())
-
+# Converts value to expected column type based on schema; handles unexpected formats
     def format_value(self, column: str, value):
         if column not in self.column_types:
             raise ValueError(f"Got unexpected column {column}")
@@ -113,7 +115,7 @@ class HighPowerSpecViolation:
             return self.column_types[column](value)
         except:
             return value
-
+# Extracts list of unique testsuites from VOP, IOP, or Power data; ensures consistency.
     def get_testsuites(self) -> list[str]:
         vop_testsuites = None
         iop_testsuites = None
@@ -158,7 +160,7 @@ class HighPowerSpecViolation:
         nan_indices = np.isnan(arr)
         arr[nan_indices] = np.interp(np.flatnonzero(nan_indices), np.flatnonzero(valid), arr[valid])
         return arr
-
+# Loads and parses raw CSV waveform data into a cleaned, sorted DataFrame
     def load_raw_csv(self, path) -> pd.DataFrame:
         """
         Read in the IOP or VOP data and output as dataframe.
@@ -210,7 +212,7 @@ class HighPowerSpecViolation:
         df["testsuite_last"] = df["Testsuite"].apply(lambda x: x.split(".")[-1])
 
         return df
-
+# Processes waveform data (VOP/IOP/Power) per pin and testsuite; computes max, P95, and duration.
     def process_vop_iop(self, voltage_or_current: str) -> pd.DataFrame:
         raw_data = None
         if voltage_or_current == "voltage":
@@ -280,6 +282,7 @@ class HighPowerSpecViolation:
 
 
 
+# Aggregates power waveform across rails per testsuite; computes max and average power
     def get_power_per_testsuite(self) -> pd.DataFrame:
         # summing testsuit across pinname
         plot_values = {
@@ -379,7 +382,7 @@ class HighPowerSpecViolation:
         return filter_rows
 
     
-
+# Plots max and P95 voltage per rail and testsuite; saves interactive HTML per site. 
     def plot_voltage(self, output_file: str = None) -> None:
         """
         Plot the rail by testsuite where the data is max voltage of each testsuite-rail
@@ -436,7 +439,7 @@ class HighPowerSpecViolation:
                 fig.write_html(outfile_renamed)
             else:
                 fig.show()
-                
+# Plots max and P95 current per rail and testsuite; saves interactive HTML per site.                
     def plot_current(self, output_file: str = None) -> None:
         """
         Plot the rail by testsuite where the data is max current of each testsuite-rail
@@ -492,7 +495,7 @@ class HighPowerSpecViolation:
                 fig.write_html(outfile_renamed)
             else:
                 fig.show()
-
+# Plots max and P95 power per rail and testsuite; saves interactive HTML per site.
     def plot_power(self, thresholds: list[float] = None, output_file: str = None, per_pin: bool = False) -> None:
         if thresholds is None:
             thresholds = POWER_THRESHOLDS
@@ -917,7 +920,7 @@ class HighPowerSpecViolation:
    
 
    
-  
+  # Generates per-site average power summary per pin and testsuite; saves as CSV and HTML.
 def generate_rail_summary_html_max_and_p95(instances, output_file: str = "rail_summary_max_p95.html") -> None:
     print("Generating rail summary with max and P95 values for multiple instances.")
 
@@ -1007,4 +1010,5 @@ if __name__ == "__main__":
     main()
 
  
+
 
