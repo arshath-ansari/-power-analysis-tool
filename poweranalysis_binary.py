@@ -13,7 +13,7 @@ import plotly.express as px
 
  
 
-
+# Parses binary header to extract site, signal type, timestamp, and waveform metadata.
 def parse_header(f):
     header = b""
     while True:
@@ -32,7 +32,7 @@ def parse_header(f):
     length = int(parts[4])
     samplerate= float(parts[5])
     return site, signal, vc, timestamp, length, samplerate
-
+# Reads binary profiling file; extracts waveform data and execution metadata.
 def read_file(filename):  
     data = []
     execution_info = {}
@@ -92,6 +92,8 @@ def read_file(filename):
  
 
 
+
+# Detects regions in waveform where operational sequence bits are active.
  
 def detect_regions(waveform, mask=2):
     regions = []
@@ -120,8 +122,7 @@ def detect_regions(waveform, mask=2):
 
 
 
-
-
+# Main function to process binary data, generate plots, and summarize rail metrics.
 def main():
   
     
@@ -159,6 +160,7 @@ def main():
             testsuite_map[(site, signal, vc)] = matched_fqn
     df["Testsuite"] = df.apply(lambda row: testsuite_map.get((row["Site"], row["PinName"], row["VC"])), axis=1)
 
+# Plots max and P95 voltage per rail and testsuite for a given site.
 
 def plot_voltage_directly(data, execution_info, site):
 
@@ -222,6 +224,7 @@ def plot_voltage_directly(data, execution_info, site):
     fig.write_html(f"Voltage_plotprofz_site{site}.html")
 
     print("Voltage plot displayed and saved as 'voltage_plotprofz.html'.")
+# Plots max and P95 current per rail and testsuite for a given site.
 
 def plot_current_directly(data, execution_info, site):
 
@@ -286,6 +289,7 @@ def plot_current_directly(data, execution_info, site):
 
 
     print("Current plot displayed and saved as 'Current_plotprofz.html'.")
+# Plots max and P95 power per rail and testsuite for a given site.
  
 def plot_power_directly(data, execution_info, site):
     print(f" Plotting power data for site {site}...")
@@ -349,6 +353,7 @@ def plot_power_directly(data, execution_info, site):
 
 
  
+# Generates HTML summary of max and P95 values for voltage, current, and power per pin.
  
 def generate_rail_summary_html_max_only(data, execution_info, output_file="rail_summary_prof.html"):
     print("Generating rail summary with max and P95 values...")
@@ -430,3 +435,4 @@ def generate_rail_summary_html_max_only(data, execution_info, output_file="rail_
 if __name__ == '__main__':
 
     main()
+
