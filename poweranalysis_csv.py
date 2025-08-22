@@ -204,6 +204,8 @@ class HighPowerSpecViolation:
                     )
 
         df = pd.DataFrame(content_dict, columns=columns)
+        #filtering out disconnect and testsuites
+        df = df[df["Type"] != "disconnect"]
         df["row_index"] = df.index
 
         # sort by Seq column
@@ -1012,6 +1014,7 @@ if __name__ == "__main__":
     main()
 
  
+
 
 
 
